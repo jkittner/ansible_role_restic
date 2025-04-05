@@ -174,6 +174,7 @@ Available variables:
 | `keep_yearly `     |              no               | If set, only keeps the last n yearly snapshots.                                                                                                                              |
 | `keep_within`      |              no               | If set, only keeps snapshots in this time period.                                                                                                                            |
 | `keep_tag`         |              no               | If set, keep snapshots with this tags. Make sure to specify a list.                                                                                                          |
+| `backup_extra_args` |             no               | Extra arguments to pass to the `restic backup command. |
 | `prune`            |         no (`false`)          | If `true`, the `restic forget` command in the script has the [`--prune` option](https://restic.readthedocs.io/en/stable/060_forget.html#removing-backup-snapshots) appended. |
 | `forget_extra_args` |       no                     | Extra arguments to pass to the `restic forget` command. |
 | `scheduled`        |         no (`false`)          | If `restic_create_schedule` is set to `true`, this backup is scheduled and tries to create a systemd timer unit. If it fails, it is creating a cronjob. |
