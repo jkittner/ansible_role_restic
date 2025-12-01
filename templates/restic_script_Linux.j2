@@ -260,6 +260,26 @@ else
 fi
 {% endif %}
 
+{#
+  verify the target to backup is actually present and mounted
+#}
+
+{% if item.verify_mountpoint is defined and item.verify_mountpoint is not none %}
+if ! mountpoint -q "{{ item.verify_mountpoint }}"; then
+    echo "$(date -u '+%Y-%m-%d %H:%M:%S') ERROR: Mountpoint {{ item.verify_mountpoint }} is not mounted!" {{ backup_result_log }}
+    {% if item.on_error_cmd is defined -%}
+      {{ item.on_error_cmd }}
+    {% endif -%}
+    {% if item.mail_on_error is defined and item.mail_on_error == true %}
+    mail -s "restic backup failed on {{ ansible_hostname }}" {{ item.mail_address }}  <<< "Something went wrong while running restic backup script running at {{ ansible_hostname }} at $(date -u '+%Y-%m-%d %H:%M:%S').
+      {%- if item.src is defined -%}
+        {{ ' ' }}We tried to backup '{{ item.src }}'.
+      {%- endif -%}
+      {{ ' ' }}Please repair the restic-{{ item.name | replace(' ', '') }} job."
+    {% endif %}
+fi
+{% endif %}
+
 
 {#
   Define backup commands
