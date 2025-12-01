@@ -257,6 +257,8 @@ else
       {%- endif -%}
       {{ ' ' }}Please repair the restic-{{ item.name | replace(' ', '') }} job."
     {% endif %}
+    rm -f $pid
+    exit
 fi
 {% endif %}
 
@@ -277,6 +279,8 @@ if ! mountpoint -q "{{ item.verify_mountpoint }}"; then
       {%- endif -%}
       {{ ' ' }}Please repair the restic-{{ item.name | replace(' ', '') }} job."
     {% endif %}
+    rm -f $pid
+    exit
 fi
 {% endif %}
 
@@ -330,6 +334,8 @@ case $BACKUP_EXIT_CODE in
       {%- endif -%}
       {{ ' ' }}Please repair the restic-{{ item.name | replace(' ', '') }} job."
     {% endif %}
+    rm -f $pid
+    exit $BACKUP_EXIT_CODE
 esac
 
 {% if item.lvm is defined %}
@@ -362,6 +368,8 @@ else
       {%- endif -%}
       {{ ' ' }}Please repair the restic-{{ item.name | replace(' ', '') }} job."
     {% endif %}
+    rm -f $pid
+    exit 1
 fi
 
 {# 
@@ -390,6 +398,8 @@ else
       {%- endif -%}
       {{ ' ' }}Please repair the restic-{{ item.name | replace(' ', '') }} job."
     {% endif %}
+    rm -f $pid
+    exit 1
 fi
 {% endif %}
 
