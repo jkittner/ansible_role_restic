@@ -20,6 +20,50 @@
     - item.src is defined or item.stdin and item.stdin_cmd is defined
     - item.repo in restic_repos
 
+- name: (BACKUP) Create healthcheck endpoint
+  community.healthchecksio.checks:
+    # TODO: delete does not work, that might be a bug in the collection
+    state: "{{ 'present' if item.add_healthcheck | default(false) | bool else 'absent' }}"
+    name: "{{ item.name }}"
+    slug: "{{ item.name | replace(' ', '-') | lower }}"
+    tags: "{{ item.tags | default([]) }}"
+    desc: "{{ item.healthcheck_desc if item.healthcheck_desc is defined else 'Healthcheck if the ' ~ item.name ~ ' backup is running successfully' }}"
+    grace: "{{ item.healthcheck_grace }}"
+    schedule: "{{ item.schedule_minute }} {{ item.schedule_hour }} * {{ item.schedule_month | default('*') }} {{ item.schedule_weekday | default('*') }}"
+    tz: "{{ item.healthcheck_tz | default('UTC') }}"
+    channels: "{{ item.healthcheck_channels | default([]) }}"
+    unique: ["slug"]
+    api_key: "{{ healthchecks_api_key }}"
+    management_api_base_url: "{{ healthchecks_service_url }}/api/v3"
+  register: hc
+  loop: '{{ restic_backups }}'
+  when:
+    - item.name is defined
+    - item.src is defined or item.stdin is defined
+    - item.src is defined or item.stdin and item.stdin_cmd is defined
+    - item.repo in restic_repos
+
+- name: Init updated restic_backups
+  ansible.builtin.set_fact:
+    restic_backups_updated: []
+
+
+- name: (BACKUP) Update backup commands with healthcheck urls
+  ansible.builtin.set_fact:
+    restic_backups_updated: >-
+      {{
+        restic_backups_updated
+        + [
+            item.item
+            | combine({
+                'pre_backup_cmd': 'curl -m 10 --retry 5 ' ~ item.data.ping_url ~ '/start',
+                'monitoring_call': 'curl -m 10 --retry 5 ' ~ item.data.ping_url,
+                'on_error_cmd': 'curl -m 10 --retry 5 ' ~ item.data.ping_url ~ '/fail',
+              })
+          ]
+      }}
+  loop: "{{ hc.results }}"
+
 - name: (BACKUP) Create backup script
   ansible.builtin.template:
     src: restic_script_Linux.j2
@@ -28,7 +72,7 @@
     owner: '{{ restic_dir_owner }}'
     group: '{{ restic_dir_group }}'
   no_log: "{{ restic_no_log }}"
-  with_items: '{{ restic_backups }}'
+  with_items: '{{ restic_backups_updated }}'
   when:
     - item.name is defined
     - item.src is defined or item.stdin is defined
